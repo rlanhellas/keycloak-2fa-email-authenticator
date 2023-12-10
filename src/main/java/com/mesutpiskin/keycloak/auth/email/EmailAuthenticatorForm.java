@@ -25,9 +25,11 @@ import java.util.concurrent.ThreadLocalRandom;
 @JBossLog
 public class EmailAuthenticatorForm implements Authenticator {
 
-    static final String ID = "demo-email-code-form";
+    static final String ID = "email-authenticator";
 
     public static final String EMAIL_CODE = "emailCode";
+    public static final String TTL_CODE = "ttl";
+    public static final int DEFAULT_TTL = 300;
 
     private final KeycloakSession session;
 
@@ -63,6 +65,7 @@ public class EmailAuthenticatorForm implements Authenticator {
         int emailCode = ThreadLocalRandom.current().nextInt(99999999);
         sendEmailWithCode(context.getRealm(), context.getUser(), String.valueOf(emailCode));
         context.getAuthenticationSession().setAuthNote(EMAIL_CODE, Integer.toString(emailCode));
+        context.getAuthenticationSession().setAuthNote(TTL_CODE, Long.toString(System.currentTimeMillis() + (DEFAULT_TTL * 1000L)));
     }
 
     @Override
@@ -136,6 +139,7 @@ public class EmailAuthenticatorForm implements Authenticator {
         Map<String, Object> mailBodyAttributes = new HashMap<>();
         mailBodyAttributes.put("username", user.getUsername());
         mailBodyAttributes.put("code", code);
+        mailBodyAttributes.put("ttl", DEFAULT_TTL/60);
 
         String realmName = realm.getDisplayName() != null ? realm.getDisplayName() : realm.getName();
         List<Object> subjectParams = List.of(realmName);
